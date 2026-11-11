@@ -1,0 +1,167 @@
+{
+  "project": "LeRobot-Servo-Debugger",
+  "branchName": "ralph/lerobot-servo-debugger",
+  "description": "Debugging tool for SO-100/SO-101 servo problems: servos not responding and small jerky movements",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create diagnostic script for USB port detection",
+      "description": "As a user, I need to identify if my USB ports are detected and accessible so I can rule out connection issues.",
+      "acceptanceCriteria": [
+        "Script lists all available serial ports on Linux/Mac",
+        "Checks if udev rules are set correctly (Linux)",
+        "Verifies USB device permissions (chmod 666 /dev/ttyACM*)",
+        "Outputs clear pass/fail status for each check",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "src/port_scanner.py. Also checks ModemManager, brltty rules for WCH 1a86, the vendor ch343 driver, /dev/serial/by-id names and the VS Code Flatpak sandbox. Writes no udev rule itself (needs sudo); prints one."
+    },
+    {
+      "id": "US-002",
+      "title": "Create motor bus connection tester",
+      "description": "As a user, I need to test if the motor bus can establish communication so I know the controller board works.",
+      "acceptanceCriteria": [
+        "Attempts connection at common baudrates (115200, 1000000)",
+        "Scans for motors at IDs 1-10",
+        "Reports which motors respond (if any)",
+        "Identifies baudrate mismatches",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "src/bus_tester.py. Scans all 8 STS baudrates (not just 115200/1000000) and IDs 0-20 (or 0-252 with --full); reports duplicate IDs as garbled replies."
+    },
+    {
+      "id": "US-003",
+      "title": "Create individual motor ping utility",
+      "description": "As a user, I need to ping each motor individually to identify which specific motors are failing.",
+      "acceptanceCriteria": [
+        "Pings each motor ID (1-6 for SO-101)",
+        "Reports response time for each motor",
+        "Identifies motors with no response",
+        "Suggests possible causes (bad ID, power, cable)",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "src/motor_ping.py. Locates where the daisy chain breaks (board -> 1 -> ... -> 6)."
+    },
+    {
+      "id": "US-004",
+      "title": "Create power supply diagnostics",
+      "description": "As a user, I need to verify power supply status as insufficient power causes servo failures.",
+      "acceptanceCriteria": [
+        "Reads voltage from motors that respond",
+        "Warns if voltage below 11V (for 12V system)",
+        "Detects power cycling issues",
+        "Suggests power supply requirements",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "src/power_diagnostics.py. Changed from 'warn below 11V': the standard SO-101 is 7.4 V motors on a 5 V supply. Classifies the motor by Max_Voltage_Limit (14.0 V = 12 V motor) and flags a supply above the motor's limit as CRITICAL. Monitor for drop-outs; load test moves one joint to catch brownouts (below 4.8 V on 7.4 V motors)."
+    },
+    {
+      "id": "US-005",
+      "title": "Create motor reset and reconfiguration tool",
+      "description": "As a user, I need to reset and reconfigure motors with correct settings.",
+      "acceptanceCriteria": [
+        "Resets motor to factory defaults",
+        "Sets correct ID for each motor position",
+        "Configures baudrate to 1000000",
+        "Sets operating mode to position control",
+        "Configures P/I/D coefficients (16/0/32)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "src/motor_reset.py. No factory reset on purpose: it clears ID and baudrate. Sets ID/baud of the single connected motor; writes LeRobot's configure() values (P/I/D 16/0/32, gripper limits). Torque left off."
+    },
+    {
+      "id": "US-006",
+      "title": "Create automated diagnostic report generator",
+      "description": "As a user, I want a comprehensive diagnostic report summarizing all issues found.",
+      "acceptanceCriteria": [
+        "Runs all diagnostic checks in sequence",
+        "Generates markdown report with findings",
+        "Prioritizes issues by severity",
+        "Provides step-by-step fix instructions",
+        "Saves report to diagnostics/report.md",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "src/report_generator.py. Writes diagnostics/report.md and a timestamped copy."
+    },
+    {
+      "id": "US-007",
+      "title": "Create interactive CLI debugger",
+      "description": "As a user, I want an interactive CLI to walk through debugging steps.",
+      "acceptanceCriteria": [
+        "Menu-driven interface with numbered options",
+        "Options: Port scan, Motor scan, Ping test, Reset motor, Full diagnostic",
+        "Clear instructions at each step",
+        "Handles errors gracefully with suggestions",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "src/cli.py, 11 options."
+    },
+    {
+      "id": "US-008",
+      "title": "Create motor settings audit",
+      "description": "As a user, I want to see stored servo settings that cause buzzing or stepwise motion.",
+      "acceptanceCriteria": [
+        "Reads operating mode, P/I/D, Max_Torque_Limit, Return_Delay_Time, limits, Phase",
+        "Flags PID not 16/0/32 and torque limit below 800",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "src/settings_audit.py"
+    },
+    {
+      "id": "US-009",
+      "title": "Create bus reliability test",
+      "description": "As a user, I want to know if bus reads fail under teleop-like load.",
+      "acceptanceCriteria": [
+        "Reads every joint's position back to back for N seconds",
+        "Reports loop rate and failed-cycle share per joint",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "read_stress in src/motor_ping.py"
+    },
+    {
+      "id": "US-010",
+      "title": "Check LeRobot install and calibration",
+      "description": "As a user, I want old LeRobot builds and stale calibration flagged, since both cause jerky motion.",
+      "acceptanceCriteria": [
+        "Finds LeRobot in ~/lerobot-env, venvs, conda",
+        "Warns below 0.6.0 (position overflow) and 0.6.1 (no read retries)",
+        "Flags calibration made before the fixes or with empty ranges",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "src/lerobot_env.py"
+    },
+    {
+      "id": "US-011",
+      "title": "Test without hardware",
+      "description": "As a developer, I want the checks tested without the arm.",
+      "acceptanceCriteria": [
+        "Simulated Feetech bus with voltage limits, EEPROM lock, duplicate IDs, brownouts",
+        "Tests for every module",
+        "mypy --strict passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "tests/fake_bus.py, tests/test_debugger.py (25 tests)"
+    }
+  ]
+}

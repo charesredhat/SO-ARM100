@@ -1,0 +1,24 @@
+# LeRobot Servo Debugger - Progress
+
+## Status: Stories US-001 to US-007 implemented (2026-11-11), plus US-008 to US-011
+
+## Completed Stories:
+- US-001 src/port_scanner.py - ports, dialout, ModemManager, brltty, vendor ch343 driver, by-id names, udev rule
+- US-002 src/bus_tester.py - scan every STS baudrate x IDs, wrong baud, factory ID 1, duplicate IDs
+- US-003 src/motor_ping.py - per-joint ping with timing, chain-break location, intermittent motors
+- US-004 src/power_diagnostics.py - voltage vs motor variant (7.4 V / 12 V), drop-out monitor, load test
+- US-005 src/motor_reset.py - set ID/baud of one motor, write LeRobot settings (no factory reset, on purpose)
+- US-006 src/report_generator.py - all read-only checks, diagnostics/report.md
+- US-007 src/cli.py - interactive menu
+- US-008 src/settings_audit.py - PID, torque limit, mode, limits
+- US-009 src/motor_ping.py read_stress - teleop-style read reliability
+- US-010 src/lerobot_env.py - LeRobot version, rustypot, calibration files
+- US-011 tests/ - simulated Feetech bus, 25 tests; mypy --strict clean
+
+## Codebase Patterns:
+- Every check returns list[Finding] (severity, title, detail, fix) from src/findings.py.
+- Talk to servos through src/feetech.FeetechBus only; tests swap in tests/fake_bus.FakeTransport.
+- Anything that writes EEPROM or moves a joint asks first and leaves torque off.
+
+## Not done yet:
+- Not run against the real arm (it was unplugged); first real run should be the full report.

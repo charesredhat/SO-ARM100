@@ -1,0 +1,10 @@
+# SO-101 servo debugger: only pyserial is needed to run it.
+pyserial>=3.5
+
+# Development (tests use only the standard library):
+#   pip install mypy types-pyserial
+#   python -m unittest discover -s tests -t .
+#   mypy --strict src tests
+
+# LeRobot itself goes in its own environment (see TROUBLESHOOTING.md step 2):
+#   pip install 'lerobot[feetech]'
